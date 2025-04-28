@@ -1,0 +1,18 @@
+meta {
+  name: set-connection
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{rootUrl}}/connection/set
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "deviceId":"asdfasdfa",
+    "deviceName":"Bruno"
+  }
+}
