@@ -1,4 +1,4 @@
-import { app, dialog, BrowserWindow, ipcMain } from "electron";
+import { app, dialog, BrowserWindow, Tray, Menu, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath as fileURLToPath$1 } from "node:url";
 import path$5 from "node:path";
@@ -88992,9 +88992,11 @@ async function startSyncServer() {
   app2.use(express$1.json());
   app2.use("/api", router);
   const server = http$2.createServer(app2);
-  startBonjour(3001);
-  server.listen(3001, () => {
-    console.log("Sync server running on port 3001");
+  server.listen(0, () => {
+    const address = server.address();
+    const port = address == null ? void 0 : address.port;
+    startBonjour(port);
+    console.log("Sync server running on port " + port);
   });
   app2.use(errorHandler);
 }
@@ -89037,6 +89039,12 @@ const MAIN_DIST = path$5.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path$5.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$5.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
+app.setLoginItemSettings({
+  openAtLogin: true,
+  // Start on boot
+  openAsHidden: true
+  // <-- THIS is important! Start hidden
+});
 async function createWindow() {
   await startSyncServer();
   win = new BrowserWindow({
@@ -89059,6 +89067,26 @@ async function createWindow() {
   } else {
     win.loadFile(path$5.join(RENDERER_DIST, "index.html"));
   }
+  win == null ? void 0 : win.on("close", (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      win == null ? void 0 : win.hide();
+    }
+  });
+}
+function createTray() {
+  const tray = new Tray("icon.png");
+  const contextMenu = Menu.buildFromTemplate([
+    { label: "Show App", click: () => win == null ? void 0 : win.show() },
+    {
+      label: "Quit",
+      click: () => {
+        app.isQuiting = true;
+        app.quit();
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
 }
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -89071,7 +89099,10 @@ app.on("activate", () => {
     createWindow();
   }
 });
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  createTray();
+});
 export {
   MAIN_DIST,
   RENDERER_DIST,

@@ -86,37 +86,6 @@ public class ConnectionRepository {
             }
         });
     }
-//    public void uploadFiles(CurrentDeviceInfo deviceInfo,List<MultipartBody.Part> fileParts,ConnectionCallback callback) {
-//        Log.d("ApiSuccess Files", "Uploading files"+fileParts.size());
-//        apiService.uploadFiles(deviceInfo.getDeviceId(),fileParts).enqueue(new Callback<Map<String, Object>>() {
-//            @Override
-//            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-//                ConnectionResponse connectionResponse=new ConnectionResponse();
-//                if (response.isSuccessful()) {
-//                    Map<String, Object> result = response.body();
-//
-////                    if (result!=null && result.containsKey("connected")) {
-////                        Object connectedValue = result.get("connected");
-////                        if (connectedValue instanceof Boolean) {
-////                            connectionResponse.setConnected((Boolean) connectedValue);
-////                        } else{
-////                            connectionResponse.setConnected(false);
-////                        }
-////                    }
-//                    Log.d("ApiSuccess", "Response: " + result);
-//                } else {
-//                    connectionResponse.setConnected(false);
-//                    Log.d("ApiError", "Failed: " + response.message()+response.toString());
-//                }
-//                callback.onConnectionResponse(connectionResponse);
-//            }
-//
-//            @Override
-//            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-//                Log.d("ApiError", "API ON Failed: " + t.getMessage());
-//            }
-//        });
-//    }
     public void uploadFilesInChunks(CurrentDeviceInfo deviceInfo, List<MultipartBody.Part> fileParts,String folderName, FileUploadCallBack callback) {
         Log.d("ApiSuccess Files", "Total files to upload: " + fileParts.size());
 
@@ -147,11 +116,12 @@ public class ConnectionRepository {
                         }
 
                         Log.d("ApiSuccess", "Chunk " + " uploaded. Global map: " + uploadedFileMap);
+                    }else{
+                        Log.d("Api Failed", "Chunk Error " + "  " + response);
                     }
                     if (uploadedChunks[0] == totalChunks) {
                         Log.d("ApiSuccess", "All chunks uploaded successfully");
-                        ConnectionResponse connectionResponse = new ConnectionResponse();
-                        connectionResponse.setConnected(true); // or set based on actual response
+                        // or set based on actual response
                         callback.onFileUploaded(uploadedFileMap);
                     }
                 }

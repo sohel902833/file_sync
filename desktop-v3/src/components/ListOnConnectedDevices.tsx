@@ -42,7 +42,7 @@ const ListOfConnectedDevices = () => {
                                 onClick={() => chooseFolder(item)}
                                 className="btn btn-primary btn-outline"
                             >
-                                Choose Device
+                                Choose File Path
                             </button>
                         </div>
                     );

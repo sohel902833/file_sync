@@ -4,11 +4,16 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -23,6 +28,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.filesync.Adapter.ApprovedFileListAdapter;
 import com.example.filesync.Helpers.ApprovedFolderHelpers;
+import com.example.filesync.Helpers.FileUploadHelpers;
+import com.example.filesync.Helpers.PcConnectionHelper;
 import com.example.filesync.Models.ApprovedFolder;
 import com.example.filesync.R;
 import com.example.filesync.Storage.FolderUriManager;
@@ -33,6 +40,7 @@ import java.util.List;
 import java.util.Set;
 
 public class LandingActivity extends AppCompatActivity {
+    TextView deviceNameTv,connectionResponseTV;
     RecyclerView approvedFolderListRecyclerView;
     FloatingActionButton addNewFolderInPermissionBtn;
     FolderUriManager folderUriManager;
@@ -41,13 +49,14 @@ public class LandingActivity extends AppCompatActivity {
 
     List<ApprovedFolder> approvedFolderList=new ArrayList<>();
     ProgressDialog progressDialog;
-
+    PcConnectionHelper pcConnectionHelper;
 
     // Request code for storage permission request
     private static final int REQUEST_CODE_PERMISSION = 1001;
 
     // Request code for folder picker activity result
     private static final int REQUEST_CODE_PICK_FOLDER = 1002;
+    boolean IS_DEVICE_CONNECTED=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,17 +71,86 @@ public class LandingActivity extends AppCompatActivity {
         approvedFileListAdapter=new ApprovedFileListAdapter(this,approvedFolderList);
         approvedFolderListRecyclerView.setAdapter(approvedFileListAdapter);
         //prepare page data
-        prepareApproveFolderList();
         addNewFolderInPermissionBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 requestUserForPermission();
             }
         });
+
+        connectWithPc();
+
+
+
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+
+        NetworkRequest networkRequest = new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build();
+
+        connectivityManager.registerNetworkCallback(networkRequest, new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(Network network) {
+                // 🎯 Internet connection is restored here
+                Log.d("NetworkCallback", "Internet connection restored");
+                LandingActivity.this.IS_DEVICE_CONNECTED=false;
+                connectWithPc();
+
+            }
+
+            @Override
+            public void onLost(Network network) {
+                // ❌ Internet connection lost
+                Log.d("NetworkCallback", "Internet connection lost");
+                connectWithPc();
+            }
+        });
+
+
+
     }
+
+    private void connectWithPc() {
+        connectionResponseTV.setText("Not Connected");
+        deviceNameTv.setText("Finding Device..");
+        pcConnectionHelper=new PcConnectionHelper(this);
+        pcConnectionHelper.listen(new PcConnectionHelper.ConnectionCallBack() {
+            @Override
+            public void onConnected() {
+                LandingActivity.this.IS_DEVICE_CONNECTED=true;
+                prepareApproveFolderList();
+                runOnUiThread(()->connectionResponseTV.setText("Connected"));
+            }
+
+            @Override
+            public void onDeviceFound(String ipAddress, int port, String deviceName) {
+                runOnUiThread(() -> {
+                    deviceNameTv.setText(deviceName+" At Ip: "+ipAddress+":"+port);
+                });
+            }
+
+            @Override
+            public void onStartConnecting() {
+                runOnUiThread(()->connectionResponseTV.setText("Checking Connection..."));
+            }
+
+            @Override
+            public void onConnectionFailed() {
+                LandingActivity.this.IS_DEVICE_CONNECTED=false;
+                runOnUiThread(()->connectionResponseTV.setText("Connection Failed"));
+            }
+            @Override
+            public void onDisConnected() {
+                LandingActivity.this.IS_DEVICE_CONNECTED=false;
+            }
+        });
+    }
+
 
     private void initUi() {
         approvedFolderListRecyclerView=findViewById(R.id.approvedFolderListRecyclerView);
+        deviceNameTv=findViewById(R.id.device_name_TextView);
+        connectionResponseTV=findViewById(R.id.connection_response_TextView);
         addNewFolderInPermissionBtn=findViewById(R.id.addNewFolderInPermissionBtn);
         approvedFolderListRecyclerView.setHasFixedSize(true);
         approvedFolderListRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -84,8 +162,6 @@ public class LandingActivity extends AppCompatActivity {
         approvedFolderHelpers=new ApprovedFolderHelpers(this);
 
     }
-
-
     void prepareApproveFolderList(){
         progressDialog.setTitle("Loading Approved Folders");
         progressDialog.setMessage("Please wait...");
@@ -126,15 +202,61 @@ public class LandingActivity extends AppCompatActivity {
              }
              @Override
              public void onFolderScanCompleted(ApprovedFolder folder, List<DocumentFile> uploadedFiles, List<DocumentFile> pendingToUploadFiles) {
+                 if(!pendingToUploadFiles.isEmpty()){
+                     uploadFiles(folder.getFolderName(),pendingToUploadFiles);
+                 }
 
              }
 
          });
     }
+    private void updateFileUploaded(int fileSize, String folderName){
+        for(int i=0;i<approvedFolderList.size();i++){
+            ApprovedFolder approvedFolder=approvedFolderList.get(i);
+            if(approvedFolder.getFolderName().equals(folderName)){
+                approvedFolder.setUploadedFiles(approvedFolder.getUploadedFiles()+fileSize);
+                approvedFolder.setPendingUploadFiles(approvedFolder.getPendingUploadFiles()-fileSize);
+                approvedFileListAdapter.notifyItemChanged(i);
+                break;
+            }
+        }
+    }
+    private void uploadFiles(String folderName,List<DocumentFile> pendingToUploadFiles){
+        if(LandingActivity.this.IS_DEVICE_CONNECTED){
+            FileUploadHelpers uploadHelpers=new FileUploadHelpers(LandingActivity.this,folderName);
+            uploadHelpers.start(pendingToUploadFiles, new FileUploadHelpers.UploaderCallBack() {
+                @Override
+                public void onUploadingStarted(int fileSize, String folderName) {
+                    for(int i=0;i<approvedFolderList.size();i++){
+                        ApprovedFolder approvedFolder=approvedFolderList.get(i);
+                        if(approvedFolder.getFolderName().equals(folderName)){
+                            approvedFolder.setUploading(true);
+                            approvedFileListAdapter.notifyItemChanged(i);
+                            break;
+                        }
+                    }
+                }
 
+                @Override
+                public void onUploadCompleted(int fileSize, String folderName) {
+                    for(int i=0;i<approvedFolderList.size();i++){
+                        ApprovedFolder approvedFolder=approvedFolderList.get(i);
+                        if(approvedFolder.getFolderName().equals(folderName)){
+                           approvedFolder.setUploading(false);
+                            approvedFileListAdapter.notifyItemChanged(i);
+                            break;
+                        }
+                    }
+                }
 
-
-    private void uploadFiles(){
+                @Override
+                public void onFolderChunkUploaded(int fileSize, String folderName) {
+                    updateFileUploaded(fileSize,folderName);
+                }
+            });
+        }else{
+            Toast.makeText(LandingActivity.this,"Device Not Connected",Toast.LENGTH_SHORT).show();
+        }
 
     }
 
@@ -205,5 +327,6 @@ public class LandingActivity extends AppCompatActivity {
     }
 
     private void syncFiles() {
+        prepareApproveFolderList();
     }
 }

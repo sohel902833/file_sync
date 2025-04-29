@@ -25,7 +25,7 @@ public class FileSnapshotStorageHelper {
         this.context = activity;
     }
 
-    public void saveSnapshot(Map<String, Long> snapshot,String fileName) {
+    public void saveSnapshot(Map<String, Long> snapshot) {
         try {
             Map<String,Long> oldSnapshot=loadSnapshot();
             snapshot.putAll(oldSnapshot);

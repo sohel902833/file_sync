@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, Tray } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -31,6 +31,11 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 export let win: BrowserWindow | null;
 
+app.setLoginItemSettings({
+    openAtLogin: true, // Start on boot
+    openAsHidden: true, // <-- THIS is important! Start hidden
+});
+
 async function createWindow() {
     const io = await startSyncServer();
     win = new BrowserWindow({
@@ -57,6 +62,29 @@ async function createWindow() {
         // win.loadFile('dist/index.html')
         win.loadFile(path.join(RENDERER_DIST, "index.html"));
     }
+    win?.on("close", (event) => {
+        //@ts-ignore
+        if (!app.isQuiting) {
+            event.preventDefault(); // Prevent the app from closing
+            win?.hide(); // Just hide the window
+        }
+    });
+}
+
+function createTray() {
+    const tray = new Tray("icon.png");
+    const contextMenu = Menu.buildFromTemplate([
+        { label: "Show App", click: () => win?.show() },
+        {
+            label: "Quit",
+            click: () => {
+                //@ts-ignore
+                app.isQuiting = true;
+                app.quit();
+            },
+        },
+    ]);
+    tray.setContextMenu(contextMenu);
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -77,4 +105,7 @@ app.on("activate", () => {
     }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+    createTray();
+});

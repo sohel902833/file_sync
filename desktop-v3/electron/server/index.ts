@@ -35,15 +35,19 @@ export async function startSyncServer() {
     // });
 
     // Start service discovery
-    startBonjour(3001); // Different port than Vite
+    // Different port than Vite
 
     // Handle connections
     // io.on("connection", (socket) => {
     //     console.log("Client connected:", socket.id);
     // });
 
-    server.listen(3001, () => {
-        console.log("Sync server running on port 3001");
+    server.listen(0, () => {
+        const address = server.address();
+        //@ts-ignore
+        const port: number = address?.port;
+        startBonjour(port);
+        console.log("Sync server running on port " + port);
     });
 
     app.use(errorHandler);

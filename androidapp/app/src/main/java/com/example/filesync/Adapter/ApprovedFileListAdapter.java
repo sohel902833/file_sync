@@ -41,6 +41,11 @@ public class ApprovedFileListAdapter extends RecyclerView.Adapter<ApprovedFileLi
         holder.folderNameTv.setText(item.getFolderName());
         holder.uploadedFilesTv.setText(MessageFormat.format("Uploaded {0}/{1}", item.getUploadedFiles(), item.getTotalFiles()));
 
+        if(item.isUploading()){
+            holder.uploadingTV.setVisibility(View.VISIBLE);
+        }else{
+            holder.uploadingTV.setVisibility(View.GONE);
+        }
 
 
 //
@@ -90,7 +95,7 @@ public class ApprovedFileListAdapter extends RecyclerView.Adapter<ApprovedFileLi
     }
 
     public class MyViewHolder extends  RecyclerView.ViewHolder implements View.OnClickListener{
-        TextView folderNameTv,uploadedFilesTv;
+        TextView folderNameTv,uploadedFilesTv,uploadingTV;
         Button removePermissionButton;
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -98,6 +103,7 @@ public class ApprovedFileListAdapter extends RecyclerView.Adapter<ApprovedFileLi
             folderNameTv=itemView.findViewById(R.id.pf_folderNameTV);
             uploadedFilesTv=itemView.findViewById(R.id.pf_uploadedFilesTV);
             removePermissionButton=itemView.findViewById(R.id.pf_rmvPermission);
+            uploadingTV=itemView.findViewById(R.id.pf_uploadingTV);
             itemView.setOnClickListener(this);
         }
 
