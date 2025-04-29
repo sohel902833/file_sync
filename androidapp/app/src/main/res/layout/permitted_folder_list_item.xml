@@ -1,13 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:orientation="vertical" android:layout_width="match_parent" app:cardCornerRadius="15dp" android:layout_margin="10dp" app:cardBackgroundColor="@color/white" android:layout_height="wrap_content">
     <LinearLayout
-        android:layout_width="wrap_content"
         android:orientation="vertical"
-        android:layout_height="wrap_content">
-
+        android:padding="10dp" android:layout_marginLeft="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        >
+        <TextView
+            android:id="@+id/pf_folderNameTV"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="textStart"
+            android:text="Pictures"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            />
+        <TextView
+            android:id="@+id/pf_uploadedFilesTV"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="textStart"
+            android:text="Uploaded 10/30"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            />
+        <LinearLayout
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <Button
+                android:id="@+id/pf_rmvPermission"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Delete Permission"
+                android:background="@drawable/green_button_bg"
+                android:textColor="@color/white"
+                android:textAllCaps="false"/>
+         </LinearLayout>
     </LinearLayout>
-
-</RelativeLayout>
+</androidx.cardview.widget.CardView>
