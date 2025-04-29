@@ -10,10 +10,10 @@ export const createStorage = (folderName: string, deviceFilePath: string) => {
             mkdirSync(directory);
         }
         return multer.diskStorage({
-            destination: function (req, file, cb) {
+            destination: function (_: any, __: any, cb: any) {
                 cb(null, directory);
             },
-            filename: function (req, file, cb) {
+            filename: function (_, file, cb) {
                 const fileName = file.originalname;
                 cb(null, fileName);
             },

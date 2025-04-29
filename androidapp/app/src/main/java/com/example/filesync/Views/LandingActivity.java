@@ -109,44 +109,83 @@ public class LandingActivity extends AppCompatActivity {
 
 
     }
+   PcConnectionHelper.ConnectionCallBack pcConnectionCalback= new PcConnectionHelper.ConnectionCallBack() {
+        @Override
+        public void onConnected() {
+            LandingActivity.this.IS_DEVICE_CONNECTED=true;
+            prepareApproveFolderList();
+            runOnUiThread(()->connectionResponseTV.setText("Connected"));
+        }
 
+        @Override
+        public void onDeviceFound(String ipAddress, int port, String deviceName) {
+            runOnUiThread(() -> {
+                deviceNameTv.setText(deviceName+" At Ip: "+ipAddress+":"+port);
+            });
+        }
+
+        @Override
+        public void onStartConnecting() {
+            runOnUiThread(()->connectionResponseTV.setText("Checking Connection..."));
+        }
+
+        @Override
+        public void onConnectionFailed() {
+            LandingActivity.this.IS_DEVICE_CONNECTED=false;
+            runOnUiThread(()->connectionResponseTV.setText("Connection Failed"));
+        }
+        @Override
+        public void onDisConnected() {
+            LandingActivity.this.IS_DEVICE_CONNECTED=false;
+        }
+    };
     private void connectWithPc() {
         connectionResponseTV.setText("Not Connected");
         deviceNameTv.setText("Finding Device..");
         pcConnectionHelper=new PcConnectionHelper(this);
-        pcConnectionHelper.listen(new PcConnectionHelper.ConnectionCallBack() {
-            @Override
-            public void onConnected() {
-                LandingActivity.this.IS_DEVICE_CONNECTED=true;
-                prepareApproveFolderList();
-                runOnUiThread(()->connectionResponseTV.setText("Connected"));
-            }
-
-            @Override
-            public void onDeviceFound(String ipAddress, int port, String deviceName) {
-                runOnUiThread(() -> {
-                    deviceNameTv.setText(deviceName+" At Ip: "+ipAddress+":"+port);
-                });
-            }
-
-            @Override
-            public void onStartConnecting() {
-                runOnUiThread(()->connectionResponseTV.setText("Checking Connection..."));
-            }
-
-            @Override
-            public void onConnectionFailed() {
-                LandingActivity.this.IS_DEVICE_CONNECTED=false;
-                runOnUiThread(()->connectionResponseTV.setText("Connection Failed"));
-            }
-            @Override
-            public void onDisConnected() {
-                LandingActivity.this.IS_DEVICE_CONNECTED=false;
-            }
-        });
+        pcConnectionHelper.listen(LandingActivity.this.pcConnectionCalback);
     }
 
+    private ApprovedFolderHelpers.FolderListCallback folderListCallback = new ApprovedFolderHelpers.FolderListCallback() {
+        @Override
+        public void onFolderListPrepared(List<ApprovedFolder> folders) {
+            runOnUiThread(()->{
+                Log.d("ApprovedFolderList", "onFolderListPrepared: "+folders.size());
+                approvedFolderList.clear();
+                approvedFolderList.addAll(folders);
+                progressDialog.dismiss();
+                approvedFileListAdapter.notifyDataSetChanged();
+            });
+        }
 
+        @Override
+        public void onCurrentStatus(String text) {
+            runOnUiThread(()->progressDialog.setMessage(text));
+        }
+
+        @Override
+        public void onCompleted(List<ApprovedFolder> folders) {
+            runOnUiThread(()->{
+                Toast.makeText(LandingActivity.this,"Folder Scan Completed",Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        @Override
+        public void onItemUpdated(ApprovedFolder folder, int position) {
+            runOnUiThread(()->{
+                approvedFolderList.set(position,folder);
+                approvedFileListAdapter.notifyItemChanged(position);
+            });
+        }
+        @Override
+        public void onFolderScanCompleted(ApprovedFolder folder, List<DocumentFile> uploadedFiles, List<DocumentFile> pendingToUploadFiles) {
+            if(!pendingToUploadFiles.isEmpty()){
+                uploadFiles(folder.getFolderName(),pendingToUploadFiles);
+            }
+
+        }
+
+    };
     private void initUi() {
         approvedFolderListRecyclerView=findViewById(R.id.approvedFolderListRecyclerView);
         deviceNameTv=findViewById(R.id.device_name_TextView);
@@ -169,46 +208,7 @@ public class LandingActivity extends AppCompatActivity {
         progressDialog.show();
          Set<Uri> folderUris=folderUriManager.getFolderUrisAsUris();
 
-         approvedFolderHelpers.prepareApproveFolderList(folderUris, new ApprovedFolderHelpers.FolderListCallback() {
-             @Override
-             public void onFolderListPrepared(List<ApprovedFolder> folders) {
-                 runOnUiThread(()->{
-                     Log.d("ApprovedFolderList", "onFolderListPrepared: "+folders.size());
-                     approvedFolderList.clear();
-                     approvedFolderList.addAll(folders);
-                     progressDialog.dismiss();
-                     approvedFileListAdapter.notifyDataSetChanged();
-                 });
-             }
-
-             @Override
-             public void onCurrentStatus(String text) {
-                 runOnUiThread(()->progressDialog.setMessage(text));
-             }
-
-             @Override
-             public void onCompleted(List<ApprovedFolder> folders) {
-                 runOnUiThread(()->{
-                     Toast.makeText(LandingActivity.this,"Folder Scan Completed",Toast.LENGTH_SHORT).show();
-                 });
-             }
-
-             @Override
-             public void onItemUpdated(ApprovedFolder folder, int position) {
-                 runOnUiThread(()->{
-                     approvedFolderList.set(position,folder);
-                     approvedFileListAdapter.notifyItemChanged(position);
-                 });
-             }
-             @Override
-             public void onFolderScanCompleted(ApprovedFolder folder, List<DocumentFile> uploadedFiles, List<DocumentFile> pendingToUploadFiles) {
-                 if(!pendingToUploadFiles.isEmpty()){
-                     uploadFiles(folder.getFolderName(),pendingToUploadFiles);
-                 }
-
-             }
-
-         });
+         approvedFolderHelpers.prepareApproveFolderList(folderUris, LandingActivity.this.folderListCallback);
     }
     private void updateFileUploaded(int fileSize, String folderName){
         for(int i=0;i<approvedFolderList.size();i++){

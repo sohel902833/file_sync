@@ -1,7 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import multer from "multer";
 import { createStorage } from "./bulkUpload.utils";
-import { createError } from "../../errors";
 import { DeviceInfo, readDevices } from "../../../db";
 import path from "path";
 import { app } from "electron";
@@ -42,7 +41,7 @@ export const uploadFiles = (
     field_name: string,
     imageRequired: boolean = true
 ): any => {
-    return async (req: Request, res: Response, next: NextFunction) => {
+    return async (req: Request, res: Response) => {
         try {
             const deviceId = req?.params?.deviceId;
             let folderName = req.params?.folderName;

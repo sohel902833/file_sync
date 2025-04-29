@@ -1,12 +1,12 @@
-import { app, BrowserWindow, ipcMain, Menu, Tray } from "electron";
-import { createRequire } from "node:module";
+import { app, BrowserWindow, ipcMain } from "electron";
+// import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { startSyncServer } from "./server";
 import { sendConnectedDevice } from "./events/device-events";
 import { registerAllIpcHandlers } from "./ipc";
 
-const require = createRequire(import.meta.url);
+// const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The built directory structure
@@ -37,9 +37,9 @@ app.setLoginItemSettings({
 });
 
 async function createWindow() {
-    const io = await startSyncServer();
+    await startSyncServer();
     win = new BrowserWindow({
-        icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+        icon: path.join(process.env.VITE_PUBLIC, "app_icon.svg"),
         webPreferences: {
             preload: path.join(__dirname, "preload.mjs"),
         },
@@ -72,19 +72,19 @@ async function createWindow() {
 }
 
 function createTray() {
-    const tray = new Tray("icon.png");
-    const contextMenu = Menu.buildFromTemplate([
-        { label: "Show App", click: () => win?.show() },
-        {
-            label: "Quit",
-            click: () => {
-                //@ts-ignore
-                app.isQuiting = true;
-                app.quit();
-            },
-        },
-    ]);
-    tray.setContextMenu(contextMenu);
+    // const tray = new Tray(path.join(process.env.VITE_PUBLIC, "app_icon.svg"));
+    // const contextMenu = Menu.buildFromTemplate([
+    //     { label: "Show App", click: () => win?.show() },
+    //     {
+    //         label: "Quit",
+    //         click: () => {
+    //             //@ts-ignore
+    //             app.isQuiting = true;
+    //             app.quit();
+    //         },
+    //     },
+    // ]);
+    // tray.setContextMenu(contextMenu);
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common

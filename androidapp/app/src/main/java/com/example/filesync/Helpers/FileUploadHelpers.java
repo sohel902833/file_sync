@@ -81,8 +81,10 @@ public class FileUploadHelpers {
                     callBack.onUploadingStarted(pendingToUploadFiles.size(),FileUploadHelpers.this.folderName);
                 }
                 for(DocumentFile file:pendingToUploadFiles){
+
                     Uri fileUri = file.getUri();
                     try {
+                        long fileSizeInMb = (long) (file.length() / (1024.0 * 1024.0));
                         File tempFile = createTempFileFromUri(fileUri,file.getName());
                         RequestBody requestFile = RequestBody.create(MediaType.parse("application/octet-stream"), tempFile);
                         MultipartBody.Part part = MultipartBody.Part.createFormData(
@@ -90,10 +92,18 @@ public class FileUploadHelpers {
                                 tempFile.getName(),
                                 requestFile
                         );
-                        fileParts.add(part);
-                        fileSnapshots.put(file.getName(),file.lastModified());
-                        Log.d("Gnerating Multipart body","Generating multipart body --->"+folderName);
-                    } catch (IOException e) {
+                        if(fileSizeInMb>50){
+                            Log.d("File Size", "file size is big upload separately "+file.getName()+" --> "+fileSizeInMb+" MB");
+                            List<MultipartBody.Part> currentFileParts = new ArrayList<>();
+                            Map<String, Long> currentFileSnapshot=new HashMap<>();
+                            currentFileSnapshot.put(file.getName(),file.lastModified());
+                            currentFileParts.add(part);
+                            uploadFilesInChunks(currentFileParts,currentFileSnapshot,callBack);
+                        }else{
+                            fileParts.add(part);
+                            fileSnapshots.put(file.getName(),file.lastModified());
+                        }
+                   } catch (IOException e) {
                         Log.e("Upload", "Failed to copy file from Uri: " + fileUri, e);
                     }
                 }

@@ -76,7 +76,7 @@ public class ApprovedFolderHelpers {
                         if (file.isFile()) {
                             String fileName=file.getName();
                             callback.onCurrentStatus("Checking : "+fileName+" --> On "+folderName);
-                            Log.d("ApprovedFolderList", "Checking : "+fileName+" --> On "+folderName);
+//                            Log.d("ApprovedFolderList", "Checking : "+fileName+" --> On "+folderName);
                             if(prevUploadedFiles.containsKey(fileName)){
                                 totalUploaded++;
                                 uploadedFiles.add(file);
@@ -112,13 +112,13 @@ public class ApprovedFolderHelpers {
                 try {
                     List<DocumentFile> uploadedFiles = new ArrayList<>();
                     List<DocumentFile> pendingToUploadFiles = new ArrayList<>();
-                    System.out.println("Scanning folder: " + folderName + " on thread " + Thread.currentThread().getName());
+//                    System.out.println("Scanning folder: " + folderName + " on thread " + Thread.currentThread().getName());
                     FileSnapshotStorageHelper fileSnapshotStorageHelper=new FileSnapshotStorageHelper(activity,folderName);
                     Map<String,Long> prevUploadedFiles=fileSnapshotStorageHelper.loadSnapshot();
                     for (DocumentFile file : folder.listFiles()) {
                         if (file.isFile()) {
                             String fileName=file.getName();
-                            Log.d("ApprovedFolderList", "Checking : "+fileName+" --> On "+folderName);
+//                            Log.d("ApprovedFolderList", "Checking : "+fileName+" --> On "+folderName);
                             if(prevUploadedFiles.containsKey(fileName)){
                                 uploadedFiles.add(file);
                             }else{

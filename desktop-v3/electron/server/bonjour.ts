@@ -3,6 +3,7 @@ import os from "os";
 export function startBonjour(port: number) {
     const instance = bonjour();
     const deviceName = os.hostname();
+    console.log("Bonjur Port Name", port);
     instance.publish({
         name: deviceName,
         type: "filesync",

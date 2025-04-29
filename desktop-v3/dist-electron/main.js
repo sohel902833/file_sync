@@ -1,5 +1,4 @@
-import { app, dialog, BrowserWindow, Tray, Menu, ipcMain } from "electron";
-import { createRequire } from "node:module";
+import { app, dialog, BrowserWindow, ipcMain } from "electron";
 import { fileURLToPath as fileURLToPath$1 } from "node:url";
 import path$5 from "node:path";
 import require$$1$1, { dirname as dirname$1 } from "path";
@@ -70710,6 +70709,7 @@ const bonjour$1 = /* @__PURE__ */ getDefaultExportFromCjs(bonjour);
 function startBonjour(port) {
   const instance = bonjour$1();
   const deviceName = require$$0$7.hostname();
+  console.log("Bonjur Port Name", port);
   instance.publish({
     name: deviceName,
     type: "filesync",
@@ -70737,7 +70737,6 @@ const sendConnectedDevice = () => {
   var _a;
   if (win) {
     const deviceList = readDevices();
-    console.log("Read Device", deviceList);
     (_a = win == null ? void 0 : win.webContents) == null ? void 0 : _a.send("connected_device_list", deviceList);
   }
 };
@@ -88854,10 +88853,10 @@ const createStorage = (folderName, deviceFilePath) => {
       mkdirSync(directory);
     }
     return multer$1.diskStorage({
-      destination: function(req2, file, cb) {
+      destination: function(_, __, cb) {
         cb(null, directory);
       },
-      filename: function(req2, file, cb) {
+      filename: function(_, file, cb) {
         const fileName = file.originalname;
         cb(null, fileName);
       }
@@ -88895,7 +88894,7 @@ async function getUploadedFileInfo(filePath) {
   }
 }
 const uploadFiles = (max_length, field_name, imageRequired = true) => {
-  return async (req2, res2, next) => {
+  return async (req2, res2) => {
     var _a, _b;
     try {
       const deviceId = (_a = req2 == null ? void 0 : req2.params) == null ? void 0 : _a.deviceId;
@@ -88977,7 +88976,7 @@ const moduleRoutes = [
   }
 ];
 moduleRoutes.forEach((route3) => router.use(route3.path, route3.route));
-function errorHandler(err, req2, res2, next) {
+function errorHandler(err, _, res2) {
   console.error(err);
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
@@ -88992,11 +88991,12 @@ async function startSyncServer() {
   app2.use(express$1.json());
   app2.use("/api", router);
   const server = http$2.createServer(app2);
-  server.listen(0, () => {
+  const port = 5599;
+  startBonjour(port);
+  server.listen(port, () => {
     const address = server.address();
-    const port = address == null ? void 0 : address.port;
-    startBonjour(port);
-    console.log("Sync server running on port " + port);
+    const port2 = address == null ? void 0 : address.port;
+    console.log("Sync server running on port " + port2);
   });
   app2.use(errorHandler);
 }
@@ -89031,7 +89031,6 @@ const registerDeviceIpc = (ipc, _) => {
 function registerAllIpcHandlers(ipcMain2, mainWindow) {
   registerDeviceIpc(ipcMain2);
 }
-createRequire(import.meta.url);
 const __dirname = path$5.dirname(fileURLToPath$1(import.meta.url));
 process.env.APP_ROOT = path$5.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -89048,7 +89047,7 @@ app.setLoginItemSettings({
 async function createWindow() {
   await startSyncServer();
   win = new BrowserWindow({
-    icon: path$5.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    icon: path$5.join(process.env.VITE_PUBLIC, "app_icon.svg"),
     webPreferences: {
       preload: path$5.join(__dirname, "preload.mjs")
     }
@@ -89074,20 +89073,6 @@ async function createWindow() {
     }
   });
 }
-function createTray() {
-  const tray = new Tray("icon.png");
-  const contextMenu = Menu.buildFromTemplate([
-    { label: "Show App", click: () => win == null ? void 0 : win.show() },
-    {
-      label: "Quit",
-      click: () => {
-        app.isQuiting = true;
-        app.quit();
-      }
-    }
-  ]);
-  tray.setContextMenu(contextMenu);
-}
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
@@ -89101,7 +89086,6 @@ app.on("activate", () => {
 });
 app.whenReady().then(() => {
   createWindow();
-  createTray();
 });
 export {
   MAIN_DIST,

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 const ListOfConnectedDevices = () => {
     const [deviceList, setDeviceList] = useState<any[]>([]);
     useEffect(() => {
-        window.ipcRenderer.on("connected_device_list", (e, data) => {
+        window.ipcRenderer.on("connected_device_list", (_: any, data) => {
             console.log("Data", data);
             setDeviceList(data);
         });

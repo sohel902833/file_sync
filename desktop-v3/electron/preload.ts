@@ -20,7 +20,6 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
         const [channel, ...omit] = args;
         return ipcRenderer.invoke(channel, ...omit);
     },
-    hello: (asd: any) => {},
     // You can expose other APTs you need here.
     // ...
 });
